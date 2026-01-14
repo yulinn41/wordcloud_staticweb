@@ -1,250 +1,269 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>WordCloud Control</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 新春尋寶拼字趣</title>
 
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #020617;
-            --primary: #38bdf8;
-            --primary-hover: #0ea5e9;
-            --text: #e5e7eb;
-            --muted: #94a3b8;
-            --danger: #ef4444;
-            --radius: 16px;
-        }
+<style>
+:root {
+    --primary-red: #d32f2f;
+    --line-color: #eeeeee;
+    --text-dark: #1a1a1a;
+    --text-light: #999;
+}
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+body {
+    font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background-color: #ffffff;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px 0;
+}
 
-        body {
-            margin: 0;
-            min-height: 100svh;
-            background: radial-gradient(1200px 600px at top, #020617, var(--bg));
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+header { text-align: center; margin-bottom: 25px; width: 85%; }
+h1 { font-size: 1.6rem; margin: 0; letter-spacing: 4px; }
+.en-title { font-size: 0.75rem; color: var(--text-light); letter-spacing: 2px; margin-top: 5px; }
+.guide-text { font-size: 0.9rem; color: #666; margin-top: 15px; }
 
-        .app {
-            width: 100%;
-            max-width: 500px;
-            /* 稍微放寬以容納更多按鈕 */
-            background: linear-gradient(180deg, #020617, var(--panel));
-            border-radius: var(--radius);
-            padding: 24px 16px;
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
-        }
+.grid-container {
+    display: grid;
+    width: 85vw;
+    max-width: 450px;
+    margin: 20px 0;
+    border-right: 0.5px solid var(--line-color);
+    border-bottom: 0.5px solid var(--line-color);
+}
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+.cell {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    border-left: 0.5px solid var(--line-color);
+    border-top: 0.5px solid var(--line-color);
+    transition: background-color 0.2s;
+}
 
-        header h1 {
-            font-size: 22px;
-            margin: 0 0 6px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
+.cell.selected {
+    background-color: var(--primary-red);
+    color: #fff;
+}
 
-        header p {
-            margin: 0;
-            font-size: 14px;
-            color: var(--muted);
-        }
+.footer-ui {
+    width: 85%;
+    max-width: 450px;
+    text-align: center;
+}
 
-        .status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin: 0 0 20px;
-            font-size: 13px;
-            color: var(--muted);
-        }
+#selectedChars {
+    font-size: 1.6rem;
+    height: 40px;
+    color: var(--primary-red);
+    letter-spacing: 6px;
+}
 
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--danger);
-            transition: background 0.3s ease;
-        }
+#status-msg {
+    height: 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+}
 
-        .dot.online {
-            background: #22c55e;
-        }
+.submit-btn {
+    background: var(--text-dark);
+    color: #fff;
+    border: none;
+    width: 180px;
+    padding: 12px 0;
+    font-size: 1rem;
+    letter-spacing: 5px;
+    cursor: pointer;
+}
 
-        /* 網格佈局優化：手機版每排 3 個，平板以上每排 4 個 */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            max-height: 60vh;
-            /* 避免手機螢幕過長，增加捲軸 */
-            overflow-y: auto;
-            padding-right: 4px;
-        }
+.mode-switcher {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+}
 
-        /* 自定義捲軸樣式 */
-        .grid::-webkit-scrollbar {
-            width: 4px;
-        }
+.mode-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
 
-        .grid::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 10px;
-        }
-
-        button {
-            appearance: none;
-            border: none;
-            border-radius: 10px;
-            padding: 14px 4px;
-            font-size: 15px;
-            font-weight: 600;
-            background: linear-gradient(180deg, var(--primary), var(--primary-hover));
-            color: #020617;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
-            transition: transform 0.08s ease, box-shadow 0.08s ease;
-            white-space: nowrap;
-        }
-
-        button:active {
-            transform: translateY(2px) scale(0.95);
-            box-shadow: 0 2px 5px rgba(14, 165, 233, 0.15);
-        }
-
-        footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        @media (min-width: 400px) {
-            .grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
-            button {
-                font-size: 16px;
-            }
-        }
-    </style>
+.mode-btn.active {
+    color: var(--text-dark);
+    font-weight: 600;
+    border-bottom: 2px solid var(--text-dark);
+}
+</style>
 </head>
 
 <body>
-    <div class="app">
-        <header>
-            <h1>即時詞雲互動</h1>
-            <p>點選你想送出的祝福</p>
-        </header>
 
-        <div class="status">
-            <div id="dot" class="dot"></div>
-            <span id="statusText">連線中…</span>
-        </div>
+<header>
+    <h1>2026 新春尋寶拼字趣</h1>
+    <div class="en-title">Lunar New Year Word Search 2026</div>
+    <p class="guide-text">選取第一眼看到的關鍵詞</p>
+</header>
 
-        <div id="buttonGrid" class="grid">
-        </div>
-        <button style="margin-top:12px;background:linear-gradient(180deg,#ef4444,#dc2626);color:white;"
-            onclick="resetVotes()">
-            重新開始
-        </button>
+<div id="grid" class="grid-container"></div>
 
-        <footer>
-            即時同步至現場畫面
-        </footer>
+<div class="footer-ui">
+    <div id="selectedChars"></div>
+    <div id="status-msg"></div>
+    <button class="submit-btn" onclick="checkAnswer()">提交</button>
+
+    <div class="mode-switcher">
+        <button class="mode-btn" id="btn6-6" onclick="changeMode(6,6)">6×6</button>
+        <button class="mode-btn" id="btn6-8" onclick="changeMode(6,8)">6×8</button>
+        <button class="mode-btn active" id="btn8-8" onclick="changeMode(8,8)">8×8</button>
+        <button class="mode-btn" id="btn10-10" onclick="changeMode(10,10)">10×10</button>
     </div>
 
-    <script>
-        const WS_URL = "wss://wordcloud-iiul.onrender.com";
-        const words = [
-            "平安", "快樂", "財富", "喜樂", "光滿", "樂趣", "財寶", "休息",
-            "勇氣", "前進", "興旺", "平凡", "如意", "富貴", "福氣", "五菜一湯",
-            "美滿", "旅遊", "悠閒", "健康", "精緻", "逆襲", "歡喜", "加薪",
-            "桃花", "哈哈", "美麗", "無敵", "順利", "安康", "好運", "馬上出發", "躺平"
-        ];
+    <div class="mode-switcher">
+        <button class="mode-btn active" id="btn-lang-zh" onclick="switchLang('zh')">中文</button>
+        <button class="mode-btn" id="btn-lang-en" onclick="switchLang('en')">EN</button>
+    </div>
+</div>
 
-        const dot = document.getElementById("dot");
-        const statusText = document.getElementById("statusText");
-        const grid = document.getElementById("buttonGrid");
+<script>
+/* ===== 語言資料 ===== */
+let currentLang = 'zh';
 
-        // 動態渲染按鈕
-        function renderButtons() {
-            grid.innerHTML = words.map(word =>
-                `<button onclick="sendWord('${word}')">${word}</button>`
-            ).join('');
-        }
+const wordMap = {
+    zh: [
+        "平安健康","財源廣進","萬事如意","心想事成",
+        "大吉大利","步步高升","招財進寶","金玉滿堂",
+        "龍馬精神","福氣滿門"
+    ],
+    en: [
+        "HEALTH","WEALTH","HAPPINESS","SUCCESS","LUCK","PROSPERITY"
+    ]
+};
 
-        let ws;
+const fillerMap = {
+    zh: "喜樂春福吉祥富貴安康順利發財年慶餘",
+    en: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+};
 
-        function connect() {
-            ws = new WebSocket(WS_URL);
+/* ===== Word Search 核心 ===== */
+const directions = [
+    {x:1,y:0}, {x:0,y:1}, {x:1,y:1}
+];
 
-            ws.onopen = () => {
-                dot.classList.add("online");
-                statusText.textContent = "已連線";
-                ws.send(JSON.stringify({ role: "web" }));
-            };
+function createEmptyGrid(cols, rows) {
+    return Array.from({length: rows}, () => Array(cols).fill(''));
+}
 
-            ws.onclose = () => {
-                dot.classList.remove("online");
-                statusText.textContent = "連線中斷，重試中…";
-                setTimeout(connect, 2000);
-            };
-        }
+function canPlaceWord(grid, word, sx, sy, dir, cols, rows) {
+    for (let i=0;i<word.length;i++) {
+        const x = sx + dir.x*i;
+        const y = sy + dir.y*i;
+        if (x<0||x>=cols||y<0||y>=rows) return false;
+        if (grid[y][x] !== '' && grid[y][x] !== word[i]) return false;
+    }
+    return true;
+}
 
-        function sendWord(word) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                alert("尚未連線");
-                return;
+function placeWord(grid, word, cols, rows) {
+    for (let i=0;i<100;i++) {
+        const dir = directions[Math.floor(Math.random()*directions.length)];
+        const sx = Math.floor(Math.random()*cols);
+        const sy = Math.floor(Math.random()*rows);
+        if (canPlaceWord(grid, word, sx, sy, dir, cols, rows)) {
+            for (let j=0;j<word.length;j++) {
+                grid[sy+dir.y*j][sx+dir.x*j] = word[j];
             }
-
-            ws.send(JSON.stringify({
-                cmd: "vote",
-                word: word
-            }));
-
-            // 觸覺反饋（如果設備支持）
-            if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(50);
-            }
+            return;
         }
-        function resetVotes() {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                alert("尚未連線");
-                return;
-            }
+    }
+}
 
-            if (!confirm("確定要清空所有投票嗎？")) return;
+function buildWordSearch(cols, rows) {
+    const grid = createEmptyGrid(cols, rows);
+    const words = [...wordMap[currentLang]].sort(()=>Math.random()-0.5)
+        .slice(0, cols>=10 ? 6 : 4);
 
-            ws.send(JSON.stringify({
-                cmd: "reset"
-            }));
+    words.forEach(w => placeWord(grid, w, cols, rows));
 
-            if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(100);
-            }
-        }
+    const filler = fillerMap[currentLang];
+    for (let y=0;y<rows;y++)
+        for (let x=0;x<cols;x++)
+            if (!grid[y][x])
+                grid[y][x] = filler[Math.floor(Math.random()*filler.length)];
 
-        // 初始化
-        renderButtons();
-        connect();
-    </script>
+    return grid.flat();
+}
+
+/* ===== UI ===== */
+let selectedChars = [];
+let currentCols = 8;
+let currentRows = 8;
+
+function initGame(cols, rows) {
+    currentCols = cols;
+    currentRows = rows;
+    selectedChars = [];
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('grid').style.gridTemplateColumns = `repeat(${cols},1fr)`;
+
+    let fontSize = cols===6?"8vw":cols===8?"5.5vw":"4.5vw";
+    let maxFont = cols===6?"32px":cols===8?"22px":"18px";
+
+    const data = buildWordSearch(cols, rows);
+    data.forEach(char=>{
+        const c=document.createElement('div');
+        c.className='cell';
+        c.textContent=char;
+        c.style.fontSize=window.innerWidth>450?maxFont:fontSize;
+        c.onclick=()=>{
+            c.classList.toggle('selected');
+            c.classList.contains('selected')?
+                selectedChars.push(char):
+                selectedChars.splice(selectedChars.indexOf(char),1);
+            document.getElementById('selectedChars').textContent=selectedChars.join('');
+        };
+        document.getElementById('grid').appendChild(c);
+    });
+}
+
+function checkAnswer() {
+    const str = selectedChars.join('');
+    const msg = document.getElementById('status-msg');
+    if (wordMap[currentLang].includes(str)) {
+        msg.textContent = "✦ 找到祝福了 ✦";
+        msg.style.color = "var(--primary-red)";
+    } else {
+        msg.textContent = "再試試看";
+        msg.style.color = "#ccc";
+    }
+}
+
+function changeMode(c,r){
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(`btn${c}-${r}`).classList.add('active');
+    initGame(c,r);
+}
+
+function switchLang(lang){
+    currentLang = lang;
+    document.getElementById('btn-lang-zh').classList.toggle('active',lang==='zh');
+    document.getElementById('btn-lang-en').classList.toggle('active',lang==='en');
+    initGame(currentCols,currentRows);
+}
+
+/* ===== Start ===== */
+initGame(8,8);
+</script>
+
 </body>
-
 </html>
